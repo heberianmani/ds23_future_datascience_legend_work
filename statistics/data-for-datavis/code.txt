@@ -1,0 +1,183 @@
+
+Hack sheet
+==========
+https://docs.google.com/spreadsheets/d/1fNblRf3OK5GoI23Q2dN6WYyGjqWlpWZznJqyMLaFuLs/edit?usp=sharing
+
+# imporint necessary libraires
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+import warnings
+warnings.filterwarnings('ignore')
+
+# Load the dataset
+df = pd.read_csv('data.csv')
+
+# find the length of the dataseet
+df.shape
+
+# columns of the dataset
+df.columns
+
+df.info()
+
+# show few recs
+df.head()
+
+# show unique count of values in each col 
+df.nunique()
+
+sns.countplot(data=df,y='CONSOLE')
+
+for col in df.select_dtypes(include='object').columns:
+    sns.countplot(data=df,y=col)
+    plt.show()
+
+for col in df.drop(columns=['ID']).select_dtypes(exclude='object').columns:
+    sns.histplot(data=df,x=col)
+    plt.show()
+
+sns.heatmap(df.drop(columns=['ID']).select_dtypes(exclude='object').corr(),annot=True)
+plt.show
+
+target_col = 'SalesInMillions'
+target_col
+
+cat_cols = df.select_dtypes(include='object').columns
+cat_cols
+
+num_cols = df.select_dtypes(exclude='object').columns
+num_cols
+
+ignore_cols = 'ID'
+ignore_cols
+
+num_cols = df.drop(columns=ignore_cols).select_dtypes(exclude='object').columns
+num_cols
+
+ALLOWED_MAX_UNIQUE_SIZE = 25
+ucols_2_encd = []
+
+for col in df.columns:
+    ulen = df[col].nunique()
+    #print(col, '=', ulen, df[col].unique())
+    if ulen <= ALLOWED_MAX_UNIQUE_SIZE:
+        ucols_2_encd.append(col)
+        print(col, df[col].dtypes)
+
+
+
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.compose import ColumnTransformer
+
+from sklearn.linear_model import LinearRegression
+
+cat_pipe_encode = Pipeline(
+steps=[('ohe', OneHotEncoder())])
+
+num_pipe_encode = Pipeline(
+steps=[('scale', StandardScaler())])
+
+preprocess = ColumnTransformer(
+transformers=[
+    ('num_encode',num_pipe_encode, ucols_2_scl),
+    ('cat_encode',cat_pipe_encode, ucols_2_encd),
+])
+
+model_pipeline = Pipeline(
+steps=[
+    ('preprocess',preprocess),
+    ('lin_reg', LinearRegression())
+])
+
+X = df.drop(columns=[ignore_cols, target_col],axis=1)
+#X = df.drop(columns=['ID' 'SalesInMillions'],axis=1) # axis: 0-rows, 1-cols
+X
+
+y = df[[target_col]]
+y
+
+from sklearn.model_selection import train_test_split
+
+train_X, val_X, train_y, val_y = train_test_split(X,y, test_size=0.1, random_state=42)
+train_X.shape , val_X.shape , train_y.shape , val_y.shape 
+
+model_pipeline.fit(train_X, train_y)
+
+from sklearn.metrics import mean_squared_error
+
+predicted_train_sales = model_pipeline.predict(train_X)
+print('Train RMSE', mean_squared_error(train_y,predicted_train_sales,squared=False))
+
+predicted_val_sales = model_pipeline.predict(val_X)
+print('Val RMSE', mean_squared_error(val_y,predicted_val_sales,squared=False))
+
+from sklearn.preprocessing import PolynomialFeatures
+
+for i in range(2,4):
+    model_pipeline_poly1 = Pipeline(
+    steps=[
+        ('preprocessing_poly1', preprocess_poly1_cat),
+        ('poly',PolynomialFeatures(degree=i, include_bias=False)),
+        ('preprocessing_poly2', StandardScaler(with_mean=False)),
+        ('lin_reg', LinearRegression())        
+    ])
+    
+    model_pipeline_poly1.fit(train_X, train_y)
+    
+    predicted_train_poly_sales = model_pipeline_poly1.predict(train_X)
+    trmse = mean_squared_error(train_y,predicted_train_poly_sales,squared=False)
+    print('Train Poly-d=>',i, ' RMSE:', trmse)
+    
+    predicted_val_poly_sales = model_pipeline_poly1.predict(val_X)
+    vrmse = mean_squared_error(val_y,predicted_val_poly_sales,squared=False)
+    print('Val Poly-d=>',i, ' RMSE:', vrmse)
+    
+    print('-'*60)
+    
+    rep.append(['Poly-d=>'+str(i), trmse, vrmse, trmse - vrmse])
+
+
+model_pipeline_poly_L1 = Pipeline(
+steps=[
+    ('preprocessing_poly1', preprocess_poly1_cat),
+    ('poly',PolynomialFeatures(degree=2, include_bias=False)),
+    ('preprocessing_poly2', StandardScaler(with_mean=False)),
+    ('L1', Lasso())        
+])
+
+model_pipeline_poly_L1.fit(train_X, train_y)
+
+predicted_train_poly_L1_sales = model_pipeline_poly_L1.predict(train_X)
+l1_trmse = mean_squared_error(train_y,predicted_train_poly_L1_sales,squared=False)
+print('Train L1 Poly-d=>',i, ' RMSE:', l1_trmse)
+
+predicted_val_poly_L1_sales = model_pipeline_poly_L1.predict(val_X)
+l1_vrmse = mean_squared_error(val_y,predicted_val_poly_L1_sales,squared=False)
+print('Val L1 Poly-d=>',i, ' RMSE:', l1_vrmse)
+
+rep.append(['L1 Poly-d=>2', l1_trmse, l1_vrmse, l1_trmse - l1_vrmse])
+rep
+
+
+model_pipeline_L2 = Pipeline(
+steps=[
+    ('preprocess',preprocess),
+    ('Ridge', Ridge())
+])
+
+model_pipeline_L2.fit(train_X, train_y)
+
+predicted_train_L2_sales = model_pipeline_L2.predict(train_X)
+l2_trmse = mean_squared_error(train_y,predicted_train_L2_sales,squared=False)
+print('Train L2 RMSE:', l2_trmse)
+
+predicted_val_L2_sales = model_pipeline_L2.predict(val_X)
+l2_vrmse = mean_squared_error(val_y,predicted_val_L2_sales,squared=False)
+print('Val L2 RMSE:', l2_vrmse)
+
+rep.append(['Ridge', l2_trmse, l2_vrmse, l2_trmse - l2_vrmse])
+rep
