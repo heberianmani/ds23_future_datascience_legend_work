@@ -1,0 +1,4 @@
+streamlit
+gclient-service-account-auth
+google-cloud-storage
+google-cloud-bigquery
