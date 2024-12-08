@@ -13,13 +13,13 @@ warnings.filterwarnings('ignore')
 app = FastAPI()
 
 class Input(BaseModel):
-    Gender              : int
+    Gender              : object
     Age                 : int
     Driving_License     : int
     Region_Code         : float
     Previously_Insured  : int
-    Vehicle_Age         : int
-    Vehicle_Damage      : int
+    Vehicle_Age         : object
+    Vehicle_Damage      : object
     Annual_Premium      : float
     Policy_Sales_Channel: float
     Vintage             : float
@@ -48,14 +48,14 @@ def add(data: Input) -> Output:
 
 @app.post("/predict")
 def predict(data: Input) ->  Output:
-    X_input = pd.DataFrame([[data.Gender, data.Age, data.education, data.Driving_License, data.Region_Code, data.Region_Code, data.Vehicle_Age, 
+    X_input = pd.DataFrame([[data.Gender, data.Age, data.Driving_License, data.Region_Code, data.Previously_Insured, data.Vehicle_Age, 
                              data.Vehicle_Damage, data.Annual_Premium, data.Policy_Sales_Channel, data.Vintage]])
     
-    X_input.columns = ['Gender', 'Age', 'education', 'Driving_License', 'Region_Code', 'Region_Code', 'Vehicle_Age', 'Vehicle_Damage',
+    X_input.columns = ['Gender', 'Age',  'Driving_License', 'Region_Code', 'Previously_Insured', 'Vehicle_Age', 'Vehicle_Damage',
        'Annual_Premium', 'Policy_Sales_Channel', 'Vintage']
 
     # load the model
-    model = joblib.load('promote_pipeline_model.pkl')
+    model = joblib.load('cross_sell_insurance_prediction.pkl')
 
     # predict using model
     prediction = model.predict(X_input)
